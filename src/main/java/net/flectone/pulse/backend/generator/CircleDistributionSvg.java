@@ -89,12 +89,12 @@ public class CircleDistributionSvg extends SvgGenerator {
     }
 
     private int calculateDynamicRadius(int baseRadius, int circleCount) {
-        // Уменьшаем размеры, если элементов много, увеличиваем если мало
         if (circleCount > MAX_CIRCLES_FOR_SCALING) {
             return (int)(baseRadius * 0.7);
         } else if (circleCount < MIN_CIRCLES_FOR_SCALING) {
             return (int)(baseRadius * 1.3);
         }
+
         return baseRadius;
     }
 
@@ -109,10 +109,8 @@ public class CircleDistributionSvg extends SvgGenerator {
         int centerX = dimensions.width()/2;
         int centerY = dimensions.height()/2;
 
-        // Размещаем самый большой круг в центре
         circles.get(0).position = new Point(centerX, centerY);
 
-        // Размещаем остальные круги по спирали
         double angle = 0;
         double radius = circles.get(0).radius + CIRCLE_PADDING;
 
@@ -123,7 +121,6 @@ public class CircleDistributionSvg extends SvgGenerator {
             if (position != null) {
                 circle.position = position;
             } else {
-                // Если не удалось разместить по спирали, используем случайное положение
                 circle.position = findFallbackPosition(i, centerX, centerY);
             }
         }
