@@ -26,10 +26,7 @@ public class TimeSeriesSvg extends SvgGenerator {
     private final long yMax;
     private final double hourWidth;
 
-    public TimeSeriesSvg(Map<Instant, Map<Integer, Long>> firstData,
-                         Map<Instant, Map<Integer, Long>> secondData,
-                         String firstDataLabel,
-                         String secondDataLabel) {
+    public TimeSeriesSvg(Map<Instant, Map<Integer, Long>> firstData, Map<Instant, Map<Integer, Long>> secondData, String firstDataLabel, String secondDataLabel) {
         this.firstDataLabel = firstDataLabel;
         this.secondDataLabel = secondDataLabel;
         this.firstData = firstData;

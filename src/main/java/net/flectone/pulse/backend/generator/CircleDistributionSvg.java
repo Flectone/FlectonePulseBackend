@@ -21,13 +21,14 @@ public class CircleDistributionSvg extends SvgGenerator {
     private final boolean showPercentage;
 
     private static class DataCircle {
-        String label;
-        long value;
-        double ratio;
-        Point position;
-        int radius;
-        Color fillColor;
-        Color borderColor;
+        private final String label;
+        private final long value;
+        private final double ratio;
+        private final int radius;
+        private final Color fillColor;
+        private final Color borderColor;
+
+        private Point position;
 
         DataCircle(String label, long value, double ratio, Color fillColor, int minRadius, int maxRadius) {
             this.label = label;
@@ -56,7 +57,6 @@ public class CircleDistributionSvg extends SvgGenerator {
         this.valueSuffix = valueSuffix;
         this.showPercentage = showPercentage;
 
-        // Динамически рассчитываем размеры кругов в зависимости от количества элементов
         int count = data.size();
         int minRadius = calculateDynamicRadius(BASE_MIN_RADIUS, count);
         int maxRadius = calculateDynamicRadius(BASE_MAX_RADIUS, count);
@@ -207,7 +207,6 @@ public class CircleDistributionSvg extends SvgGenerator {
     }
 
     private void drawCircle(DataCircle circle) {
-        // Рисуем градиентную заливку
         GradientPaint gradient = new GradientPaint(
                 circle.position.x - circle.radius/2f,
                 circle.position.y - circle.radius/2f,
@@ -225,7 +224,6 @@ public class CircleDistributionSvg extends SvgGenerator {
                 circle.radius*2
         );
 
-        // Рисуем границу
         svg.setPaint(circle.borderColor);
         svg.setStroke(new BasicStroke(STROKE_WIDTH));
         svg.drawOval(
@@ -271,11 +269,9 @@ public class CircleDistributionSvg extends SvgGenerator {
         svg.setFont(new Font("Segoe UI", Font.BOLD, fontSize));
         int textWidth = svg.getFontMetrics().stringWidth(text);
 
-        // Рисуем тень
         svg.setPaint(new Color(0, 0, 0, 120));
         svg.drawString(text, x - textWidth/2 + 1, y + 1);
 
-        // Рисуем основной текст
         svg.setPaint(Color.WHITE);
         svg.drawString(text, x - textWidth/2, y);
     }

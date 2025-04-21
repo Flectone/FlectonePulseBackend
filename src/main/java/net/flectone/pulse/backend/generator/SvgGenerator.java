@@ -11,6 +11,7 @@ import java.awt.*;
 import java.io.StringWriter;
 
 public abstract class SvgGenerator {
+
     protected final SVGGraphics2D svg;
     protected final Document doc;
     protected final SvgDimensions dimensions;

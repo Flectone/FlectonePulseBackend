@@ -35,7 +35,7 @@ public class BarDistributionSvg extends SvgGenerator {
         int barCount = distribution.size();
         int barWidth = calculateBarWidth(barCount);
         int totalWidth = barCount * barWidth + (barCount - 1) * BAR_SPACING;
-        int startX = (dimensions.width() - totalWidth) / 2; // Центрирование
+        int startX = (dimensions.width() - totalWidth) / 2;
 
         long maxCount = getMaxCount();
         int index = 0;
@@ -58,7 +58,6 @@ public class BarDistributionSvg extends SvgGenerator {
     }
 
     private void drawSingleBar(int x, int barWidth, int height, String ram, long count, Color color) {
-        // Bar
         svg.setPaint(color);
         svg.fill(new RoundRectangle2D.Double(
                 x, getBarYPosition(height),
@@ -66,7 +65,6 @@ public class BarDistributionSvg extends SvgGenerator {
                 CORNER_RADIUS, CORNER_RADIUS
         ));
 
-        // Value
         svg.setFont(new Font("Segoe UI", Font.BOLD, 15));
         svg.setPaint(colors.text());
         String valueText = String.valueOf(count);
@@ -74,7 +72,6 @@ public class BarDistributionSvg extends SvgGenerator {
                 x + barWidth/2 - svg.getFontMetrics().stringWidth(valueText)/2,
                 getBarYPosition(height) - 5);
 
-        // Label
         svg.setFont(new Font("Segoe UI", Font.BOLD, 12));
         String label = ram + valueLabel;
         svg.drawString(label,

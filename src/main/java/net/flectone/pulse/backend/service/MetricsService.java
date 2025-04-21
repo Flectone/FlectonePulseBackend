@@ -82,7 +82,6 @@ public class MetricsService {
         List<ServerMetrics> metrics = new ArrayList<>();
         Instant startTime = Instant.now().minus(10, ChronoUnit.DAYS).plus(1, ChronoUnit.HOURS);
 
-        // Генерация для 5 серверов
         for (int serverId = 0; serverId < 5; serverId++) {
             System.out.println(serverId);
             for (int day = 0; day < 10; day++) {

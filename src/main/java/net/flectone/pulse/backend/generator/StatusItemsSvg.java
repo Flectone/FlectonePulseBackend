@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.List;
 
 public class StatusItemsSvg extends SvgGenerator {
+
     private final Map<String, Long> itemsStats;
     private final long totalCount;
     private final String enabledLabel;
@@ -18,8 +19,7 @@ public class StatusItemsSvg extends SvgGenerator {
     private static final int ITEM_WIDTH = 180;
     private static final int ITEM_HEIGHT = 60;
 
-    public StatusItemsSvg(Map<String, Long> itemsStats, long totalCount,
-                          String enabledLabel, String disabledLabel) {
+    public StatusItemsSvg(Map<String, Long> itemsStats, long totalCount, String enabledLabel, String disabledLabel) {
         super(new SvgDimensions(2400, 1500, 80), SvgColorPalette.defaultPalette());
 
         this.itemsStats = itemsStats;

@@ -22,9 +22,7 @@ public class ComparisonSvg extends SvgGenerator {
     private final String secondDataLabel;
     private double scaleFactor = 1.0;
 
-    public ComparisonSvg(Map<String, Pair<Long, Long>> data,
-                         String firstDataLabel,
-                         String secondDataLabel) {
+    public ComparisonSvg(Map<String, Pair<Long, Long>> data, String firstDataLabel, String secondDataLabel) {
         this.data = data.entrySet().stream()
                 .sorted((e1, e2) -> Long.compare(
                         e2.getValue().getFirst() + e2.getValue().getSecond(),
@@ -71,10 +69,9 @@ public class ComparisonSvg extends SvgGenerator {
 
     private void drawYAxis(boolean isLeft, long maxValue, Color color) {
         int x = isLeft
-                ? SIDE_MARGIN - 25 // Смещаем ось немного левее
-                : dimensions.width() - SIDE_MARGIN; // Смещаем ось немного правее
+                ? SIDE_MARGIN - 25
+                : dimensions.width() - SIDE_MARGIN;
 
-        // Остальной код метода без изменений
         svg.setPaint(color);
         svg.setStroke(new BasicStroke(2f));
         svg.drawLine(x, dimensions.margin(), x, dimensions.margin() + dimensions.graphHeight());
@@ -108,7 +105,6 @@ public class ComparisonSvg extends SvgGenerator {
         );
     }
 
-    // Остальные методы без изменений
     private String formatValue(long value) {
         if (value >= 1000000) return value / 1000000 + "M";
         if (value >= 1000) return value / 1000 + "K";
