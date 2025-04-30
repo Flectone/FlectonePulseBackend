@@ -6,6 +6,7 @@ import net.flectone.pulse.backend.aspect.SpamProtect;
 import net.flectone.pulse.backend.dto.MetricsDTO;
 import net.flectone.pulse.backend.generator.*;
 import net.flectone.pulse.backend.service.MetricsService;
+import net.flectone.pulse.backend.util.HttpUtils;
 import org.apache.batik.svggen.SVGGraphics2DIOException;
 import org.springframework.data.util.Pair;
 import org.springframework.http.MediaType;
@@ -28,10 +29,12 @@ import java.util.stream.Collectors;
 public class MetricsController {
 
     private final MetricsService metricsService;
+    private final HttpUtils httpRequestUtils;
 
     @SpamProtect
     @PostMapping
     public ResponseEntity<String> saveMetrics(@RequestBody MetricsDTO metricsDTO) {
+        metricsDTO.setLocation(httpRequestUtils.getClientLocationFromIp());
         metricsService.saveMetrics(metricsDTO);
 
         return ResponseEntity.ok("Saved");

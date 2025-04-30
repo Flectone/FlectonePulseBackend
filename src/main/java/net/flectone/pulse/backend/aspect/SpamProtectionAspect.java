@@ -2,8 +2,9 @@ package net.flectone.pulse.backend.aspect;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import net.flectone.pulse.backend.util.HttpUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class SpamProtectionAspect {
 
     private final Cache<String, Long> ipCache = CacheBuilder.newBuilder()
@@ -21,16 +23,12 @@ public class SpamProtectionAspect {
             .build();
 
 
-    private final HttpServletRequest request;
-
-    public SpamProtectionAspect(HttpServletRequest request) {
-        this.request = request;
-    }
+    private final HttpUtils httpUtils;
 
     @SneakyThrows
     @Around("@annotation(SpamProtect)")
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
-        String ip = getClientIp();
+        String ip = httpUtils.getClientIpAddressIfServletRequestExist();
 
         Long lastRequestTime = ipCache.getIfPresent(ip);
         if (lastRequestTime != null && System.currentTimeMillis() - lastRequestTime < 3000 * 1000) {
@@ -41,14 +39,5 @@ public class SpamProtectionAspect {
         ipCache.put(ip, System.currentTimeMillis());
 
         return object;
-    }
-
-    private String getClientIp() {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-
-        return request.getRemoteAddr();
     }
 }
