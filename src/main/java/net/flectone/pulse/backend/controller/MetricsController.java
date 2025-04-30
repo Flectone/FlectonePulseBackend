@@ -132,7 +132,7 @@ public class MetricsController {
                         )
                 ));
 
-        return svgResponse(new ComparisonSvg(data, "Players", "Servers"));
+        return svgResponse(new ComparisonSvg(data, "Servers", "Players"));
     }
 
     @CachedHourlySvg
@@ -244,7 +244,7 @@ public class MetricsController {
     public ResponseEntity<String> getOperationSystemsSvg() throws SVGGraphics2DIOException {
         Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
                 .collect(Collectors.groupingBy(
-                        m -> m.getOsName() + " " + m.getOsVersion(),
+                        m -> m.getOsName() + (m.getOsVersion() == null ? "" : " " + m.getOsVersion()),
                         Collectors.counting()
                 ));
 
