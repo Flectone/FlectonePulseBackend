@@ -78,7 +78,7 @@ public class MetricsController {
                     .put(hour, cnt);
         });
 
-        return svgResponse(new TimeSeriesSvg(playersDayHour, serversDayHour, "Players", "Servers"));
+        return svgResponse(new TimeSeriesSvg(playersDayHour, serversDayHour, " players", " servers"));
     }
 
     @CachedHourlySvg

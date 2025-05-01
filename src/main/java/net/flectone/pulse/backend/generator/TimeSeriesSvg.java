@@ -6,8 +6,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class TimeSeriesSvg extends SvgGenerator {
 
@@ -217,15 +219,22 @@ public class TimeSeriesSvg extends SvgGenerator {
         int legendY = dimensions.margin() + dimensions.graphHeight() + 60;
         int startX = dimensions.margin() + (dimensions.graphWidth() / 2) - LEGEND_OFFSET;
 
-        drawLegendItem(startX, legendY, colors.primary(), firstDataLabel);
-        drawLegendItem(startX + 120, legendY, colors.secondary(), secondDataLabel);
+        drawLegendItem(startX, legendY, colors.primary(), firstDataLabel, firstData);
+        drawLegendItem(startX + 120, legendY, colors.secondary(), secondDataLabel, secondData);
     }
 
-    private void drawLegendItem(int x, int y, Color color, String text) {
+    private void drawLegendItem(int x, int y, Color color, String text, Map<Instant, Map<Integer, Long>> data) {
         svg.setPaint(color);
         svg.fillOval(x, y - DOT_SIZE/2, DOT_SIZE, DOT_SIZE);
 
         svg.setPaint(colors.text());
-        svg.drawString(text, x + DOT_SIZE + 10, y + 5);
+
+        Instant currentDay = sortedDates.get(sortedDates.size() - 1);
+
+        int count = Math.toIntExact(
+                data.get(currentDay).getOrDefault(23, 0L)
+        );
+
+        svg.drawString(count + text, x + DOT_SIZE + 10, y + 5);
     }
 }
