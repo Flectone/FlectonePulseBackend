@@ -14,13 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -43,42 +39,61 @@ public class MetricsController {
     @CachedHourlySvg
     @GetMapping("/svg")
     public ResponseEntity<String> getMainSvg() throws SVGGraphics2DIOException {
+        Instant now = Instant.now();
+        Instant currentHour = now.truncatedTo(ChronoUnit.HOURS);
+        int hoursToFetch = 6 * 24 + currentHour.atZone(ZoneOffset.UTC).getHour() + 1;
 
-        Instant todayStart = Instant.now().truncatedTo(ChronoUnit.DAYS);
-        List<MetricsDTO> metrics = metricsService.getMetrics(7, ChronoUnit.DAYS).stream()
-                .filter(m -> m.getCreatedAt().isBefore(todayStart))
-                .toList();
+        List<MetricsDTO> metrics = metricsService.getMetrics(hoursToFetch, ChronoUnit.HOURS);
 
-        Map<Instant, Long> serversByHour = metrics.stream()
+        Map<Instant, Long> serverCounts = metrics.stream()
                 .collect(Collectors.groupingBy(
-                        m -> truncateToChronoUnit(m.getCreatedAt(), ChronoUnit.HOURS),
+                        m -> m.getCreatedAt().truncatedTo(ChronoUnit.HOURS),
                         Collectors.counting()
                 ));
 
-        Map<Instant, Long> playersByHour = metrics.stream()
+        Map<Instant, Long> playerCounts = metrics.stream()
                 .collect(Collectors.groupingBy(
-                        m -> truncateToChronoUnit(m.getCreatedAt(), ChronoUnit.HOURS),
+                        m -> m.getCreatedAt().truncatedTo(ChronoUnit.HOURS),
                         Collectors.summingLong(MetricsDTO::getPlayerCount)
                 ));
 
+        List<Instant> allHours = new ArrayList<>();
+        for (int i = 0; i < hoursToFetch; i++) {
+            allHours.add(currentHour.minus(hoursToFetch - 1 - i, ChronoUnit.HOURS));
+        }
+
+        Map<Instant, Long> serversByHour = new LinkedHashMap<>();
+        Map<Instant, Long> playersByHour = new LinkedHashMap<>();
+
+        allHours.forEach(hour -> {
+            serversByHour.put(hour, serverCounts.getOrDefault(hour, 0L));
+            playersByHour.put(hour, playerCounts.getOrDefault(hour, 0L));
+        });
+
         Map<Instant, Map<Integer, Long>> serversDayHour = new TreeMap<>();
+        serversByHour.forEach((hour, count) -> {
+            Instant day = hour.truncatedTo(ChronoUnit.DAYS);
+            int hourOfDay = hour.atZone(ZoneOffset.UTC).getHour();
+            serversDayHour.computeIfAbsent(day, k -> new HashMap<>())
+                    .put(hourOfDay, count);
+        });
+
         Map<Instant, Map<Integer, Long>> playersDayHour = new TreeMap<>();
-
-        serversByHour.forEach((instant, cnt) -> {
-            Instant dayInstant = truncateToChronoUnit(instant, ChronoUnit.DAYS);
-            int hour = getHourFromInstant(instant);
-            serversDayHour.computeIfAbsent(dayInstant, i -> new HashMap<>())
-                    .put(hour, cnt);
+        playersByHour.forEach((hour, count) -> {
+            Instant day = hour.truncatedTo(ChronoUnit.DAYS);
+            int hourOfDay = hour.atZone(ZoneOffset.UTC).getHour();
+            playersDayHour.computeIfAbsent(day, k -> new HashMap<>())
+                    .put(hourOfDay, count);
         });
 
-        playersByHour.forEach((instant, cnt) -> {
-            Instant dayInstant = truncateToChronoUnit(instant, ChronoUnit.DAYS);
-            int hour = getHourFromInstant(instant);
-            playersDayHour.computeIfAbsent(dayInstant, d -> new HashMap<>())
-                    .put(hour, cnt);
-        });
-
-        return svgResponse(new TimeSeriesSvg(playersDayHour, serversDayHour, " players", " servers"));
+        return svgResponse(new TimeSeriesSvg(
+                playersDayHour,
+                serversDayHour,
+                new ArrayList<>(serversDayHour.keySet()),
+                currentHour.atZone(ZoneOffset.UTC).getHour(),
+                " players",
+                " servers"
+        ));
     }
 
     @CachedHourlySvg
@@ -254,14 +269,6 @@ public class MetricsController {
                 ));
 
         return svgResponse(new CircleDistributionSvg(data, "", true));
-    }
-
-    private Instant truncateToChronoUnit(Instant instant, ChronoUnit chronoUnit) {
-        return instant.truncatedTo(chronoUnit);
-    }
-
-    private int getHourFromInstant(Instant instant) {
-        return LocalDateTime.ofInstant(truncateToChronoUnit(instant, ChronoUnit.HOURS), ZoneOffset.UTC).getHour();
     }
 
     private ResponseEntity<String> svgResponse(SvgGenerator generator) throws SVGGraphics2DIOException {

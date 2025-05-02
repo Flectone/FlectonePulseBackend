@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -27,14 +26,20 @@ public class TimeSeriesSvg extends SvgGenerator {
     private final String secondDataLabel;
     private final long yMax;
     private final double hourWidth;
+    private final int hoursInLastDay;
 
-    public TimeSeriesSvg(Map<Instant, Map<Integer, Long>> firstData, Map<Instant, Map<Integer, Long>> secondData, String firstDataLabel, String secondDataLabel) {
+    public TimeSeriesSvg(Map<Instant, Map<Integer, Long>> firstData,
+                         Map<Instant, Map<Integer, Long>> secondData,
+                         List<Instant> sortedDates,
+                         int hoursInLastDay,
+                         String firstDataLabel,
+                         String secondDataLabel) {
         this.firstDataLabel = firstDataLabel;
         this.secondDataLabel = secondDataLabel;
         this.firstData = firstData;
         this.secondData = secondData;
-        this.sortedDates = new ArrayList<>(firstData.keySet());
-        Collections.sort(sortedDates);
+        this.sortedDates = sortedDates;
+        this.hoursInLastDay = hoursInLastDay;
 
         long maxFirst = firstData.values().stream()
                 .flatMapToLong(m -> m.values().stream().mapToLong(Long::longValue))
@@ -44,7 +49,9 @@ public class TimeSeriesSvg extends SvgGenerator {
                 .max().orElse(1);
         this.yMax = Math.max(maxFirst, maxSecond);
 
-        this.hourWidth = calculateHourWidth();
+        int totalDays = sortedDates.size();
+        int totalHours = (totalDays - 1) * 24 + hoursInLastDay;
+        this.hourWidth = (double) dimensions.graphWidth() / totalHours;
     }
 
     @Override
@@ -119,29 +126,32 @@ public class TimeSeriesSvg extends SvgGenerator {
         path.moveTo(dimensions.margin(), dimensions.margin() + dimensions.graphHeight());
 
         double x = dimensions.margin();
-        double y;
 
         for (int dayIndex = 0; dayIndex < sortedDates.size(); dayIndex++) {
             Instant day = sortedDates.get(dayIndex);
             Map<Integer, Long> values = data.getOrDefault(day, Collections.emptyMap());
 
-            for (int hour = 0; hour < 24; hour++) {
+            int hoursInDay = 24;
+            if (dayIndex == sortedDates.size() - 1) {
+                hoursInDay = hoursInLastDay;
+            }
+
+            for (int hour = 0; hour < hoursInDay; hour++) {
                 int totalHour = dayIndex * 24 + hour;
-                if (totalHour == 0) continue;
-
                 x = calculateXPosition(totalHour);
-                y = calculateYValue(values.getOrDefault(hour, 0L));
+                long value = values.getOrDefault(hour, 0L);
+                int y = calculateYValue(value);
 
-                addCurveToPath(path, x, y);
+                if (totalHour == 0) {
+                    path.lineTo(x, y);
+                } else {
+                    addCurveToPath(path, x, y);
+                }
             }
         }
 
         closePath(path, x);
         return path;
-    }
-
-    private double calculateHourWidth() {
-        return (double) dimensions.graphWidth() / (sortedDates.size() * 24);
     }
 
     private double calculateXPosition(int totalHour) {
@@ -231,8 +241,14 @@ public class TimeSeriesSvg extends SvgGenerator {
 
         Instant currentDay = sortedDates.get(sortedDates.size() - 1);
 
+        int lastHour = 23;
+        if (currentDay.equals(sortedDates.get(sortedDates.size() - 1))) {
+            lastHour = hoursInLastDay > 0 ? hoursInLastDay - 1 : 23;
+        }
+
         int count = Math.toIntExact(
-                data.get(currentDay).getOrDefault(23, 0L)
+                data.getOrDefault(currentDay, Collections.emptyMap())
+                        .getOrDefault(lastHour, 0L)
         );
 
         svg.drawString(count + text, x + DOT_SIZE + 10, y + 5);
