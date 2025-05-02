@@ -232,20 +232,55 @@ public class CircleDistributionSvg extends SvgGenerator {
     }
 
     private void drawLabel(DataCircle circle) {
-        String label = abbreviateLabel(circle.label);
+        List<String> labelLines = splitLabel(circle);
         String valueText = formatValueText(circle);
         int fontSize = calculateFontSize(circle.radius);
 
-        drawTextWithShadow(concatenate(label, labelSuffix), circle.position.x, circle.position.y - 8, fontSize);
-        drawTextWithShadow(valueText, circle.position.x, circle.position.y + 10, fontSize);
+        int lineHeight = (int)(fontSize * 1.2);
+        int totalHeight = (labelLines.size() * lineHeight) + lineHeight;
+        int startY = circle.position.y - totalHeight/2 + lineHeight;
+
+        for (String line : labelLines) {
+            drawTextWithShadow(line + labelSuffix, circle.position.x, startY, fontSize);
+            startY += lineHeight;
+        }
+
+        drawTextWithShadow(valueText, circle.position.x, startY + 5, fontSize);
     }
 
-    private String concatenate(String first, String second) {
-        return second == null || second.isEmpty() ? first : first + second;
+    private List<String> splitLabel(DataCircle circle) {
+        List<String> lines = new ArrayList<>();
+        int maxLineLength = circle.radius > 50 ? 15 : 10;
+
+        String label = circle.label;
+        if (label.length() <= maxLineLength) {
+            lines.add(label);
+            return lines;
+        }
+
+        int splitPoint = findNaturalSplitPoint(label, maxLineLength);
+        if (splitPoint > 0) {
+            lines.add(label.substring(0, splitPoint).trim());
+            lines.add(label.substring(splitPoint).trim());
+        } else {
+            lines.add(label.substring(0, maxLineLength));
+            lines.add(label.substring(maxLineLength));
+        }
+
+        return lines;
     }
 
-    private String abbreviateLabel(String label) {
-        return label.length() > 10 ? label.substring(0, 7) + "..." : label;
+    private int findNaturalSplitPoint(String text, int maxLength) {
+        List<Integer> possibleSplits = Arrays.asList(
+                text.lastIndexOf(' ', maxLength),
+                text.lastIndexOf('-', maxLength),
+                text.lastIndexOf(',', maxLength)
+        );
+
+        return possibleSplits.stream()
+                .filter(i -> i > 0)
+                .max(Integer::compare)
+                .orElse(-1);
     }
 
     private String formatValueText(DataCircle circle) {
@@ -259,7 +294,7 @@ public class CircleDistributionSvg extends SvgGenerator {
     }
 
     private int calculateFontSize(int radius) {
-        return Math.max(10, Math.min(20, radius/3));
+        return Math.max(8, Math.min(16, radius/4));
     }
 
     private void drawTextWithShadow(String text, int x, int y, int fontSize) {
