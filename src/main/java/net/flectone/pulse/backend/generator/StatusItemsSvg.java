@@ -16,7 +16,7 @@ public class StatusItemsSvg extends SvgGenerator {
     private final String disabledLabel;
     private static final int CORNER_RADIUS = 12;
     private static final int ITEM_SPACING = 20;
-    private static final int ITEM_WIDTH = 180;
+    private static final int ITEM_WIDTH = 220;
     private static final int ITEM_HEIGHT = 60;
 
     public StatusItemsSvg(Map<String, Long> itemsStats, long totalCount, String enabledLabel, String disabledLabel) {
