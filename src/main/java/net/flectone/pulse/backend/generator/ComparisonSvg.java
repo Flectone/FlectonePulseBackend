@@ -53,9 +53,7 @@ public class ComparisonSvg extends SvgGenerator {
             scaleFactor = (double) availableWidth / requiredWidth;
         }
 
-        drawXAxis();
-        drawYAxis(true, maxPlayers, colors.primary());
-        drawYAxis(false, maxServers, colors.secondary());
+        svg.setFont(new Font("Segoe UI", Font.BOLD, 15));
 
         int chartWidth = (int)(calculateChartWidth() * scaleFactor);
         int startX = (dimensions.width() - chartWidth) / 2;
@@ -70,50 +68,6 @@ public class ComparisonSvg extends SvgGenerator {
 
     private int calculateChartWidth() {
         return data.size() * (2 * BAR_WIDTH + BAR_GAP + GROUP_GAP) - GROUP_GAP;
-    }
-
-    private void drawYAxis(boolean isLeft, long maxValue, Color color) {
-        int x = isLeft
-                ? SIDE_MARGIN - 25
-                : dimensions.width() - SIDE_MARGIN;
-
-        svg.setPaint(color);
-        svg.setStroke(new BasicStroke(2f));
-        svg.drawLine(x, dimensions.margin(), x, dimensions.margin() + dimensions.graphHeight());
-
-        svg.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        int steps = 6;
-        for (int i = 0; i <= steps; i++) {
-            long value = maxValue * i / steps;
-            int y = dimensions.margin() + dimensions.graphHeight() - (dimensions.graphHeight() * i / steps);
-
-            String valueText = formatValue(value);
-            int textX = isLeft ? x - svg.getFontMetrics().stringWidth(valueText) - 5
-                    : x + 5;
-
-            svg.setPaint(colors.text());
-            svg.drawString(valueText, textX, y + 5);
-
-            svg.setPaint(colors.grid());
-            svg.setStroke(new BasicStroke(0.5f));
-            svg.drawLine(SIDE_MARGIN, y, dimensions.width() - SIDE_MARGIN - 30, y);
-        }
-    }
-
-    private void drawXAxis() {
-        int y = dimensions.margin() + dimensions.graphHeight();
-        svg.setPaint(colors.grid());
-        svg.setStroke(new BasicStroke(1.5f));
-        svg.drawLine(
-                SIDE_MARGIN, y,
-                dimensions.width() - SIDE_MARGIN - 30, y
-        );
-    }
-
-    private String formatValue(long value) {
-        if (value >= 1000000) return value / 1000000 + "M";
-        if (value >= 1000) return value / 1000 + "K";
-        return Long.toString(value);
     }
 
     private void drawBars(long maxFirstValue, long maxSecondValue, int startX) {
