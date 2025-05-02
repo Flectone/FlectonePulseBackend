@@ -38,8 +38,13 @@ public class ComparisonSvg extends SvgGenerator {
 
     @Override
     protected void generateSvgContent() {
-        long maxFirstValue = data.values().stream().mapToLong(Pair::getFirst).max().orElse(1);
-        long maxSecondValue = data.values().stream().mapToLong(Pair::getSecond).max().orElse(1);
+        long maxPlayers = data.values().stream()
+                .mapToLong(Pair::getFirst)
+                .max().orElse(1);
+
+        long maxServers = data.values().stream()
+                .mapToLong(Pair::getSecond)
+                .max().orElse(1);
 
         int requiredWidth = calculateRequiredWidth();
         int availableWidth = dimensions.width() - 2 * SIDE_MARGIN;
@@ -49,13 +54,13 @@ public class ComparisonSvg extends SvgGenerator {
         }
 
         drawXAxis();
-        drawYAxis(true, maxFirstValue, colors.primary());
-        drawYAxis(false, maxSecondValue, colors.secondary());
+        drawYAxis(true, maxPlayers, colors.primary());
+        drawYAxis(false, maxServers, colors.secondary());
 
         int chartWidth = (int)(calculateChartWidth() * scaleFactor);
         int startX = (dimensions.width() - chartWidth) / 2;
 
-        drawBars(maxFirstValue, maxSecondValue, startX);
+        drawBars(maxPlayers, maxServers, startX);
         drawLegend();
     }
 
@@ -121,15 +126,15 @@ public class ComparisonSvg extends SvgGenerator {
             long firstValue = entry.getValue().getFirst();
             long secondValue = entry.getValue().getSecond();
 
-            drawBar(x, calculateBarHeight(firstValue, maxFirstValue), colors.primary(), scaledBarWidth);
-            drawBar(x + scaledBarWidth + scaledBarGap, calculateBarHeight(secondValue, maxSecondValue), colors.secondary(), scaledBarWidth);
+            drawBar(x, calculateBarHeight(firstValue, maxFirstValue), firstValue, colors.primary(), scaledBarWidth);
+            drawBar(x + scaledBarWidth + scaledBarGap, calculateBarHeight(secondValue, maxSecondValue), secondValue, colors.secondary(), scaledBarWidth);
             drawLabel(entry.getKey(), x + scaledBarWidth + (scaledBarGap / 2));
 
             x += 2 * scaledBarWidth + scaledBarGap + scaledGroupGap;
         }
     }
 
-    private void drawBar(int x, int height, Color color, int width) {
+    private void drawBar(int x, int height, long value, Color color, int width) {
         int y = dimensions.margin() + dimensions.graphHeight() - height;
 
         svg.setPaint(color);
@@ -138,6 +143,13 @@ public class ComparisonSvg extends SvgGenerator {
         svg.setPaint(color.darker());
         svg.setStroke(new BasicStroke(1f));
         svg.drawRoundRect(x, y, width, height, ARC_RADIUS, ARC_RADIUS);
+
+        svg.setPaint(color.darker());
+        svg.drawString(
+                String.valueOf(value),
+                x + width/2 - svg.getFontMetrics().stringWidth(String.valueOf(value))/2,
+                y - 5
+        );
     }
 
     private int calculateBarHeight(long value, long maxValue) {

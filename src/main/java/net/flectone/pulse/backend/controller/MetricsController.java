@@ -125,17 +125,19 @@ public class MetricsController {
     @CachedHourlySvg
     @GetMapping("/svg/server-types")
     public ResponseEntity<String> getServerTypesSvg() throws SVGGraphics2DIOException {
-        Map<String, Pair<Long, Long>> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
+        List<MetricsDTO> metrics = metricsService.getMetrics(1, ChronoUnit.HOURS);
+
+        Map<String, Pair<Long, Long>> data = metrics.stream()
                 .collect(Collectors.groupingBy(
                         MetricsDTO::getServerCore,
                         Collectors.teeing(
                                 Collectors.counting(),
                                 Collectors.summingLong(MetricsDTO::getPlayerCount),
-                                Pair::of
+                                (servers, players) -> Pair.of(players, servers)
                         )
                 ));
 
-        return svgResponse(new ComparisonSvg(data, "Servers", "Players"));
+        return svgResponse(new ComparisonSvg(data, "Players", "Servers"));
     }
 
     @CachedHourlySvg
