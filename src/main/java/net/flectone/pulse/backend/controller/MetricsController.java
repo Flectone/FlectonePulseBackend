@@ -8,6 +8,7 @@ import net.flectone.pulse.backend.generator.*;
 import net.flectone.pulse.backend.service.MetricsService;
 import net.flectone.pulse.backend.util.HttpUtils;
 import org.apache.batik.svggen.SVGGraphics2DIOException;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.springframework.data.util.Pair;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RestController
@@ -99,26 +101,23 @@ public class MetricsController {
     @CachedHourlySvg
     @GetMapping("/svg/server-versions")
     public ResponseEntity<String> getVersionsDistributionSvg() throws SVGGraphics2DIOException {
-        Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .collect(Collectors.groupingBy(
-                        MetricsDTO::getServerVersion,
-                        Collectors.counting()
-                ));
+        Map<String, Long> data = getGroupedAndSortedData(
+                MetricsDTO::getServerVersion,
+                Map.Entry.comparingByKey(Comparator.comparing(ComparableVersion::new).reversed())
+        );
 
-        return svgResponse(new CircleDistributionSvg(data, "", true));
+        return svgResponse(new BarDistributionSvg(data, ""));
     }
 
     @CachedHourlySvg
     @GetMapping("/svg/ram-usage")
     public ResponseEntity<String> getRamUsageSvg() throws SVGGraphics2DIOException {
-        List<MetricsDTO> metrics = metricsService.getMetrics(1, ChronoUnit.HOURS);
+        Map<String, Long> data = getGroupedAndSortedData(
+                m -> String.valueOf((int) Math.ceil(m.getTotalRAM() / (1024.0 * 1024.0 * 1024.0))),
+                Comparator.<Map.Entry<String, Long>>comparingInt(e -> Integer.parseInt(e.getKey())).reversed()
+        );
 
-        TreeMap<String, Long> distribution = new TreeMap<>();
-        metrics.stream()
-                .map(m -> String.valueOf((int) Math.ceil(m.getTotalRAM() / (1024.0 * 1024.0) )))
-                .forEach(ram -> distribution.put(ram, distribution.getOrDefault(ram, 0L) + 1));
-
-        return svgResponse(new CircleDistributionSvg(distribution, " MB", "", true));
+        return svgResponse(new BarDistributionSvg(data, " GB"));
     }
 
     @CachedHourlySvg
@@ -158,11 +157,11 @@ public class MetricsController {
     @CachedHourlySvg
     @GetMapping("/svg/online-mode")
     public ResponseEntity<String> getOnlineModeSvg() throws SVGGraphics2DIOException {
-        Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .collect(Collectors.groupingBy(
-                        MetricsDTO::getOnlineMode,
-                        Collectors.counting()
-                ));
+        Map<String, Long> data = getGroupedAndSortedData(
+                MetricsDTO::getOnlineMode,
+                Map.Entry.<String, Long>comparingByValue().reversed()
+        );
+
         return svgResponse(new BarDistributionSvg(data, ""));
     }
 
@@ -170,11 +169,10 @@ public class MetricsController {
     @CachedHourlySvg
     @GetMapping("/svg/project-versions")
     public ResponseEntity<String> getPluginVersionsSvg() throws SVGGraphics2DIOException {
-        Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .collect(Collectors.groupingBy(
-                        MetricsDTO::getProjectVersion,
-                        Collectors.counting()
-                ));
+        Map<String, Long> data = getGroupedAndSortedData(
+                MetricsDTO::getProjectVersion,
+                Map.Entry.comparingByKey(Comparator.comparing(ComparableVersion::new).reversed())
+        );
 
         return svgResponse(new BarDistributionSvg(data, ""));
     }
@@ -182,22 +180,21 @@ public class MetricsController {
     @CachedHourlySvg
     @GetMapping("/svg/project-languages")
     public ResponseEntity<String> getPluginLanguagesSvg() throws SVGGraphics2DIOException {
-        Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .collect(Collectors.groupingBy(
-                        MetricsDTO::getProjectLanguage,
-                        Collectors.counting()
-                ));
+        Map<String, Long> data = getGroupedAndSortedData(
+                MetricsDTO::getProjectLanguage,
+                Map.Entry.<String, Long>comparingByValue().reversed()
+        );
+
         return svgResponse(new BarDistributionSvg(data, ""));
     }
 
     @CachedHourlySvg
     @GetMapping("/svg/proxy-modes")
     public ResponseEntity<String> getProxyModesSvg() throws SVGGraphics2DIOException {
-        Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .collect(Collectors.groupingBy(
-                        MetricsDTO::getProxyMode,
-                        Collectors.counting()
-                ));
+        Map<String, Long> data = getGroupedAndSortedData(
+                MetricsDTO::getProxyMode,
+                Map.Entry.<String, Long>comparingByValue().reversed()
+        );
 
         return svgResponse(new BarDistributionSvg(data, ""));
     }
@@ -205,11 +202,10 @@ public class MetricsController {
     @CachedHourlySvg
     @GetMapping("/svg/database-modes")
     public ResponseEntity<String> getDatabaseModesSvg() throws SVGGraphics2DIOException {
-        Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .collect(Collectors.groupingBy(
-                        MetricsDTO::getDatabaseMode,
-                        Collectors.counting()
-                ));
+        Map<String, Long> data = getGroupedAndSortedData(
+                MetricsDTO::getDatabaseMode,
+                Map.Entry.<String, Long>comparingByValue().reversed()
+        );
 
         return svgResponse(new BarDistributionSvg(data, ""));
     }
@@ -217,11 +213,10 @@ public class MetricsController {
     @CachedHourlySvg
     @GetMapping("/svg/server-locations")
     public ResponseEntity<String> getServerLocationsSvg() throws SVGGraphics2DIOException {
-        Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .collect(Collectors.groupingBy(
-                        MetricsDTO::getLocation,
-                        Collectors.counting()
-                ));
+        Map<String, Long> data = getGroupedAndSortedData(
+                MetricsDTO::getLocation,
+                Map.Entry.<String, Long>comparingByValue().reversed()
+        );
 
         return svgResponse(new CircleDistributionSvg(data, "", true));
     }
@@ -229,11 +224,10 @@ public class MetricsController {
     @CachedHourlySvg
     @GetMapping("/svg/java-versions")
     public ResponseEntity<String> getJavaVersionsSvg() throws SVGGraphics2DIOException {
-        Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .collect(Collectors.groupingBy(
-                        MetricsDTO::getJavaVersion,
-                        Collectors.counting()
-                ));
+        Map<String, Long> data = getGroupedAndSortedData(
+                MetricsDTO::getJavaVersion,
+                Map.Entry.comparingByKey(Comparator.comparing(ComparableVersion::new).reversed())
+        );
 
         return svgResponse(new BarDistributionSvg(data, ""));
     }
@@ -241,34 +235,51 @@ public class MetricsController {
     @CachedHourlySvg
     @GetMapping("/svg/core-counts")
     public ResponseEntity<String> getCoreCountsSvg() throws SVGGraphics2DIOException {
-        TreeMap<String, Long> data = new TreeMap<>();
-        metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .map(m -> String.valueOf(m.getCpuCores()))
-                .forEach(cores -> data.put(cores, data.getOrDefault(cores, 0L) + 1));
+        Map<String, Long> data = getGroupedAndSortedData(
+                metricsDTO -> String.valueOf(metricsDTO.getCpuCores()),
+                Comparator.<Map.Entry<String, Long>>comparingInt(e -> Integer.parseInt(e.getKey())).reversed()
+        );
+
         return svgResponse(new BarDistributionSvg(data, " cores"));
     }
 
     @CachedHourlySvg
     @GetMapping("/svg/system-archs")
     public ResponseEntity<String> getSystemArchsSvg() throws SVGGraphics2DIOException {
-        Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .collect(Collectors.groupingBy(
-                        MetricsDTO::getOsArchitecture,
-                        Collectors.counting()
-                ));
+        Map<String, Long> data = getGroupedAndSortedData(
+                MetricsDTO::getOsArchitecture,
+                Map.Entry.<String, Long>comparingByValue().reversed()
+        );
+
         return svgResponse(new BarDistributionSvg(data, ""));
     }
 
     @CachedHourlySvg
     @GetMapping("/svg/operation-systems")
     public ResponseEntity<String> getOperationSystemsSvg() throws SVGGraphics2DIOException {
-        Map<String, Long> data = metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
-                .collect(Collectors.groupingBy(
-                        m -> m.getOsName() + (m.getOsVersion() == null ? "" : " " + m.getOsVersion()),
-                        Collectors.counting()
-                ));
+        Map<String, Long> data = getGroupedAndSortedData(
+                MetricsDTO::getOsName,
+                Map.Entry.<String, Long>comparingByValue().reversed()
+        );
 
         return svgResponse(new CircleDistributionSvg(data, "", true));
+    }
+
+    private <T> Map<String, Long> getGroupedAndSortedData(Function<MetricsDTO, T> classifier,
+                                                          Comparator<Map.Entry<String, Long>> sorter) {
+        return metricsService.getMetrics(1, ChronoUnit.HOURS).stream()
+                .collect(Collectors.groupingBy(
+                        m -> String.valueOf(classifier.apply(m)),
+                        Collectors.counting()
+                ))
+                .entrySet().stream()
+                .sorted(sorter)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
     }
 
     private ResponseEntity<String> svgResponse(SvgGenerator generator) throws SVGGraphics2DIOException {
