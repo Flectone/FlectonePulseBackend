@@ -174,7 +174,7 @@ public class MetricsController {
                 Map.Entry.comparingByKey(Comparator.comparing(ComparableVersion::new).reversed())
         );
 
-        return svgResponse(new BarDistributionSvg(data, ""));
+        return svgResponse(new BarDistributionSvg(data, "", "-"));
     }
 
     @CachedHourlySvg

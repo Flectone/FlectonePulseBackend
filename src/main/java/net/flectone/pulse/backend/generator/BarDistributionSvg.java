@@ -15,11 +15,19 @@ public class BarDistributionSvg extends SvgGenerator {
 
     private final Map<String, Long> distribution;
     private final String valueLabel;
+    private final String splitBy;
+
+    public BarDistributionSvg(Map<String, Long> distribution,
+                              String valueLabel,
+                              String splitBy) {
+        this.distribution = distribution;
+        this.valueLabel = valueLabel;
+        this.splitBy = splitBy;
+    }
 
     public BarDistributionSvg(Map<String, Long> distribution,
                               String valueLabel) {
-        this.distribution = distribution;
-        this.valueLabel = valueLabel;
+        this(distribution, valueLabel, "");
     }
 
     @Override
@@ -74,9 +82,27 @@ public class BarDistributionSvg extends SvgGenerator {
 
         svg.setFont(new Font("Segoe UI", Font.BOLD, 12));
         String label = ram + valueLabel;
-        svg.drawString(label,
-                x + barWidth/2 - svg.getFontMetrics().stringWidth(label)/2,
-                dimensions.height() - dimensions.margin() - 15);
+        int baseY = dimensions.height() - dimensions.margin() - 15;
+
+        if (splitBy.isEmpty()) {
+            svg.drawString(label,
+                    x + barWidth/2 - svg.getFontMetrics().stringWidth(label)/2,
+                    baseY);
+        } else {
+            String[] parts = label.split(splitBy, 2);
+            String firstLine = parts[0];
+            String secondLine = parts.length > 1 ? parts[1] : "";
+
+            svg.drawString(firstLine,
+                    x + barWidth/2 - svg.getFontMetrics().stringWidth(firstLine)/2,
+                    baseY);
+
+            if (!secondLine.isEmpty()) {
+                svg.drawString(secondLine,
+                        x + barWidth/2 - svg.getFontMetrics().stringWidth(secondLine)/2,
+                        baseY + 15);
+            }
+        }
     }
 
     private int getBarYPosition(int height) {
