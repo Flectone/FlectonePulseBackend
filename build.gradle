@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'net.flectone.pulse'
-version = '0.0.2-SNAPSHOT'
+version = '0.0.3-SNAPSHOT'
 
 java {
     toolchain {
@@ -15,7 +15,7 @@ java {
 
 bootJar {
     archiveBaseName = 'FlectonePulseBackend'
-    archiveVersion = '0.0.2'
+    archiveVersion = '0.0.3'
 }
 
 configurations {
